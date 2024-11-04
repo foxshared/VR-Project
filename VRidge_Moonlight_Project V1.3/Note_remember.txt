@@ -1,0 +1,28 @@
+VR using Moonlight + Sunshine + IDD Virtual Display
+
+IDD Virtual display Link:
+https://github.com/itsmikethetech/Virtual-Display-Driver?tab=readme-ov-file
+
+useful command sunshine
+Go to C:\Program Files\Sunshine\tools
+Open terminal or type cmd in link
+run dxgi-info.exe
+for display second monitor and etc
+
+change option.txt in IDD folder to add custom resolution + HZ
+
+More tutorial from owner https://www.youtube.com/@MikeTheTech
+
+haizuku test1234 pss
+
+###################### NEW HEAD without vridge app due cannot delivery good resolution
+head_vr.py
+Flow Program DIY VR with xperia 1 iii res 4k
+1> Open sensor server to send rotation head with xperia
+2> sensor server send to pc via ip addreass (websocket) + usb tethering or wifi
+3> program python read data sensor server
+4> data filter and convert quanterion via MadgwickAHRS
+5> value send to vridge API
+6> vridge api update head movement in vr via steamvr
+
+#############################################
