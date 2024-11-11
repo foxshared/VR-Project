@@ -11,7 +11,6 @@ from .orientation import eul2quat
 # [az]                [g]
 # body             Navigation
 
-
 def acc2eul(ax, ay, az, nav="ENU"):
     """
     Convert acceleration vector with gravity to Euler angle in ENU or NED frame [1]_ [2]_
@@ -32,13 +31,13 @@ def acc2eul(ax, ay, az, nav="ENU"):
     roll = 0
     pitch = 0
     yaw = 0
-    acc = np.array([[ax, ay, az]])
+    acc = np.array([[ax,ay,az]])
     if np.linalg.norm(acc) > 0:
         acc_norm = np.linalg.norm(acc)
         ax = ax/acc_norm
         ay = ay/acc_norm
         az = az/acc_norm
-        if nav == "ENU":  # ZXY (yaw - roll - pitch)
+        if nav=="ENU": # ZXY (yaw - roll - pitch)
             # roll limited between +- 90 degrees as Gimbal Lock problem (Singularity)
             # [ax (E)] = [-sin_y*sin_p*sin_r+cos_y*cos_p   cos_y*sin_p*sin_r+sin_y*cos_p    -sin_p*cos_r][0]
             # [ay (N)] = [-sin_y*cos_r                     cos_y*cos_r                      sin_r       ][0]
@@ -46,10 +45,10 @@ def acc2eul(ax, ay, az, nav="ENU"):
             # [ax (E)] = [-gsin_p*cos_r]
             # [ay (N)] = [gsin_r      ]
             # [az (U)] = [gcos_p*cos_r]
-            roll = np.arctan2(ay, np.sqrt(ax**2 + az**2))  # or np.arcsin(ay)
+            roll = np.arctan2(ay, np.sqrt(ax**2 + az**2)) # or np.arcsin(ay)
             pitch = np.arctan2(-ax, az)
             yaw = 0.0
-        elif nav == "NED":  # ZYX (yaw - pitch - roll)
+        elif nav=="NED": # ZYX (yaw - pitch - roll)
             # pitch limited between +- 90 degrees as Gimbal Lock problem (Singularity)
             # [ax (N)] = [cos_y*cos_p                     sin_y*cos_p                     -sin_p     ][0]
             # [ay (E)] = [cos_y*sin_p*sin_r-sin_y*cos_r   sin_y*sin_p*sin_r+cos_y*cos_r   cos_p*sin_r][0]
@@ -57,19 +56,12 @@ def acc2eul(ax, ay, az, nav="ENU"):
             # [ax (N)] = [-gsin_p      ]
             # [ay (E)] = [ gcos_p*sin_r]
             # [az (D)] = [ gcos_p*cos_r]
-
             roll = np.arctan2(ay, az)
             pitch = np.arctan2(-ax, np.sqrt(ay**2 + az**2)) # or np.arcsin(-ax) 
-
-            # roll = np.arctan2(ay, az + (0.05*ax))
-            # # or np.arcsin(-ax)
-            # pitch = np.arctan2(-1*ax, np.sqrt(np.square(ay) + np.square(az)))
-            # print("correct")
             yaw = 0.0
         else:
             raise ValueError("Navigation frame should be either ENU or NED")
     return roll, pitch, yaw
-
 
 def acc2quat(ax, ay, az, nav="ENU"):
     """
@@ -86,13 +78,13 @@ def acc2quat(ax, ay, az, nav="ENU"):
         - z (float) - Quaternion Z axis
     """
     roll, pitch, yaw = acc2eul(ax, ay, az, nav)
-    if nav == "ENU":  # ZXY (yaw - pitch - roll)
+    if nav=="ENU": # ZXY (yaw - pitch - roll)
         # w = -np.sin(yaw/2)*np.sin(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.cos(roll/2)
         # x = -np.sin(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)
         # y = np.sin(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)
         # z = np.sin(yaw/2)*np.cos(pitch/2)*np.cos(roll/2)+np.cos(yaw/2)*np.sin(pitch/2)*np.sin(roll/2)
         w, x, y, z = eul2quat(roll, pitch, yaw, seq="zxy")
-    elif nav == "NED":  # ZYX (yaw - pitch - roll)
+    elif nav=="NED": # ZYX (yaw - pitch - roll)
         # w = np.sin(yaw/2)*np.sin(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.cos(roll/2)
         # x = -np.sin(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)
         # y = np.sin(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)
@@ -101,7 +93,6 @@ def acc2quat(ax, ay, az, nav="ENU"):
     else:
         raise ValueError("Navigation frame should be either ENU or NED")
     return w, x, y, z
-
 
 def accmag2eul(ax, ay, az, mx, my, mz, nav="ENU"):
     """
@@ -122,16 +113,15 @@ def accmag2eul(ax, ay, az, mx, my, mz, nav="ENU"):
     .. Reference
     .. [1] Page.163, Fundamentals of Inertial Navigation, Satellite-based Positioning and their Intergration, Springer, 2013 
     """
-    roll, pitch, yaw = acc2eul(
-        ax, ay, az, nav)  # accelerometer provide roll and pitch angle
-    mag = np.array([[mx], [my], [mz]])
+    roll, pitch, yaw = acc2eul(ax, ay, az, nav) # accelerometer provide roll and pitch angle
+    mag = np.array([[mx],[my],[mz]])
     if np.linalg.norm(mag) > 0:
         mag_norm = np.linalg.norm(mag)
         mx = mx/mag_norm
         my = my/mag_norm
         mz = mz/mag_norm
-        mag = np.array([[mx], [my], [mz]])
-        if nav == "NED":
+        mag = np.array([[mx],[my],[mz]])
+        if nav == "ENU":
             # mx, my, mz in body frame
             # bx, by, bz in navigation frame
             # bx (E) = mx*(-sin_y*sin_p*sin_r+cos_y*cos_p) + my*(-sin_y*cos_r) + mz*(sin_y*cos_p*sin_r+cos_y*sin_p)
@@ -140,9 +130,8 @@ def accmag2eul(ax, ay, az, mx, my, mz, nav="ENU"):
 
             # magnetometer reading in East axis will become 0, when body frame overlap with navigation frame
             # 0 = mx*(-sin_y*sin_p*sin_r+cos_y*cos_p) + my*(-sin_y*cos_r) + mz*(sin_y*cos_p*sin_r+cos_y*sin_p)
-            yaw = np.arctan2(mx*np.cos(pitch) + mz*np.sin(pitch), mx*np.sin(pitch) * np.sin(roll) + my*np.cos(roll) - mz*np.cos(pitch)*np.sin(roll))
-            # yaw = np.arctan2(my*np.cos(roll) - mz*np.sin(roll), mx*np.cos(pitch) +my*np.sin(pitch)*np.sin(roll) + mz*np.sin(pitch)*np.cos(roll))
-        elif nav == "ENU":
+            yaw = np.arctan2(mx*np.cos(pitch) + mz*np.sin(pitch), mx*np.sin(pitch)*np.sin(roll) + my*np.cos(roll) - mz*np.cos(pitch)*np.sin(roll))
+        elif nav == "NED":
             # mx, my, mz in body frame
             # bx, by, bz in navigation frame
             # bx (N) = mx*(cos_y*cos_p) + my*(cos_y*sin_p*sin_r-sin_y*cos_r)  + mz*(cos_y*sin_p*cos_r+sin_y*sin_r)
@@ -151,13 +140,10 @@ def accmag2eul(ax, ay, az, mx, my, mz, nav="ENU"):
 
             # magnetometer reading in East axis will become 0, when body frame overlap with navigation frame
             # 0 = mx*(sin_y*cos_p) + my*(sin_y*sin_p*sin_r+cos_y*cos_r)  + mz*(sin_y*sin_p*cos_r-cos_y*sin_r)
-            yaw = np.arctan2(my*np.cos(roll) - mz*np.sin(roll), mx*np.cos(pitch) +my*np.sin(pitch)*np.sin(roll) + mz*np.sin(pitch)*np.cos(roll))
-            # yaw = np.arctan2(np.sin(roll)*mz - np.cos(roll)*my,np.cos(pitch)*mx + np.sin(roll)*np.sin(pitch)*my+ np.cos(roll)*np.sin(pitch)*mz)
-            # print("correct")
+            yaw = -np.arctan2(my*np.cos(roll) - mz*np.sin(roll), mx*np.cos(pitch) + my*np.sin(pitch)*np.sin(roll) + mz*np.sin(pitch)*np.cos(roll))
         else:
             raise ValueError("Navigation frame should be either ENU or NED")
     return roll, pitch, yaw
-
 
 def accmag2quat(ax, ay, az, mx, my, mz, nav="ENU"):
     """
@@ -177,13 +163,13 @@ def accmag2quat(ax, ay, az, mx, my, mz, nav="ENU"):
         - z (float) - Quaternion Z axis
     """
     roll, pitch, yaw = accmag2eul(ax, ay, az, mx, my, mz, nav)
-    if nav == "ENU":  # ZXY (yaw - pitch - roll)
+    if nav=="ENU": # ZXY (yaw - pitch - roll)
         # w = -np.sin(yaw/2)*np.sin(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.cos(roll/2)
         # x = -np.sin(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)
         # y = np.sin(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)
         # z = np.sin(yaw/2)*np.cos(pitch/2)*np.cos(roll/2)+np.cos(yaw/2)*np.sin(pitch/2)*np.sin(roll/2)
         w, x, y, z = eul2quat(roll, pitch, yaw, seq="zxy")
-    elif nav == "NED":  # ZYX (yaw - pitch - roll)
+    elif nav=="NED": # ZYX (yaw - pitch - roll)
         # w = np.sin(yaw/2)*np.sin(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.cos(roll/2)
         # x = -np.sin(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)+np.cos(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)
         # y = np.sin(yaw/2)*np.cos(pitch/2)*np.sin(roll/2)+np.cos(yaw/2)*np.sin(pitch/2)*np.cos(roll/2)
@@ -192,7 +178,6 @@ def accmag2quat(ax, ay, az, mx, my, mz, nav="ENU"):
     else:
         raise ValueError("Navigation frame should be either ENU or NED")
     return w, x, y, z
-
 
 def ENU2NED(E, N, U):
     """
@@ -209,15 +194,14 @@ def ENU2NED(E, N, U):
     ENU = np.array([[E],
                     [N],
                     [U]])
-    matrix = np.array([[0, 1, 0],
-                       [1, 0, 0],
-                       [0, 0, -1]])
+    matrix = np.array([[0,1,0],
+                       [1,0,0],
+                       [0,0,-1]])
     NED = matrix @ ENU
     N = NED[0][0]
     E = NED[1][0]
     D = NED[2][0]
     return N, E, D
-
 
 def NED2ENU(N, E, D):
     """
@@ -234,15 +218,14 @@ def NED2ENU(N, E, D):
     NED = np.array([[N],
                     [E],
                     [D]])
-    matrix = np.array([[0, 1, 0],
-                       [1, 0, 0],
-                       [0, 0, -1]])
+    matrix = np.array([[0,1,0],
+                       [1,0,0],
+                       [0,0,-1]])
     ENU = matrix @ NED
     E = ENU[0][0]
     N = ENU[1][0]
     U = ENU[2][0]
     return E, N, U
-
 
 def skew_symmetric(x, y, z):
     """

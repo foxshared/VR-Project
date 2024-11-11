@@ -21,8 +21,14 @@ Flow Program DIY VR with xperia 1 iii res 4k
 1> Open sensor server to send rotation head with xperia
 2> sensor server send to pc via ip addreass (websocket) + usb tethering or wifi
 3> program python read data sensor server
-4> data filter and convert quanterion via MadgwickAHRS
+4> data filter and convert quanterion via MadgwickAHRS Via kalman filter
 5> value send to vridge API
 6> vridge api update head movement in vr via steamvr
 
 #############################################
+Target
+optimize the software
+optimize tracking
+Might need to add tkinter GUI
+Add controller support or DIY controller
+Need to optimize hardware

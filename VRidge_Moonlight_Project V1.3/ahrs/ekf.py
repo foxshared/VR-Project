@@ -16,16 +16,17 @@ class EKF():
     .. Reference
     .. [1] 'EKF <https://ahrs.readthedocs.io/en/latest/filters/ekf.html>'
     """
-    def __init__(self, axis, noise=[0.3**2, 0.5**2, 0.8**2], nav_frame="NED"):
+    # def __init__(self, axis, noise=[0.3, 0.5, 0.8], nav_frame="NED"):
+    def __init__(self, axis,nav_frame="NED"):
         # Body frame is front(X)-right(Y)-down(Z), Navigation frame is NED
         # Body frame is front(Y)-right(X)-down(Z), Navigation frame is ENU
 
         # algorithm parameter
         self.axis = axis # 6 or 9
         self.nav_frame = nav_frame # ENU or NED
-        self.gyro_noise = noise[0] # increase noise means gyroscope measurement not accurate, decrease noise means gyroscope measurement accurate
-        self.accel_noise = noise[1] # increae noise means accelerometer measurement not accurate, decrease noise means accelerometer measurement accurate
-        self.mag_noise = noise[2] # increase noise means magnetometer measurement not accurate, decrease noise means magnetometer measurement accurate
+        self.gyro_noise = 0 # increase noise means gyroscope measurement not accurate, decrease noise means gyroscope measurement accurate
+        self.accel_noise = 0 # increae noise means accelerometer measurement not accurate, decrease noise means accelerometer measurement accurate
+        self.mag_noise = 1 # increase noise means magnetometer measurement not accurate, decrease noise means magnetometer measurement accurate
         if self.axis == 6:
             v = np.array([[self.accel_noise]]) # measurement noise vector
         elif self.axis == 9:
@@ -44,19 +45,27 @@ class EKF():
         # self.vertical_intensity = 25287 # vertical intensity (nT)
         # self.total_intensity = 45529 # total intensity (nT)
 
+        self.declination = 	-0.400 # declination angle (degree)
+        self.inclination = -3.841 # inclination angle (degree)
+        self.north_intensity = 41798 # north intensity (nT)
+        self.east_intensity = -292 # east intensity (nT)
+        self.horizontal_intensity = 41799 # horizontal intensity (nT)
+        self.vertical_intensity = -2806 # vertical intensity (nT)
+        self.total_intensity = 41893 # total intensity (nT)
+
         # Waterloo, Canada geomagnetic field parameter
-        self.declination = -9.434 # declination angle (degree)
-        self.inclination = 69.037 # inclination angle (degree)
-        self.north_intensity = 18780 # north intensity (nT)
-        self.east_intensity = -3120 # east intensity (nT)
-        self.horizontal_intensity = 19037 # horizontal intensity (nT)
-        self.vertical_intensity = 49688 # vertical intensity (nT)
-        self.total_intensity = 53210 # total intensity (nT)
+        # self.declination = -9.434 # declination angle (degree)
+        # self.inclination = 69.037 # inclination angle (degree)
+        # self.north_intensity = 18780 # north intensity (nT)
+        # self.east_intensity = -3120 # east intensity (nT)
+        # self.horizontal_intensity = 19037 # horizontal intensity (nT)
+        # self.vertical_intensity = 49688 # vertical intensity (nT)
+        # self.total_intensity = 53210 # total intensity (nT)
 
         self.a_ref = np.array([[0],[0],[1]]) # Gravitational Reference Vector (due to my accelerometer definition)
-        if self.nav_frame == "ENU":
+        if self.nav_frame == "NED":
             self.m_ref = np.array([[0],[math.cos(math.radians(self.inclination))],[-math.sin(math.radians(self.inclination))]]) # Magnetic Reference Vector
-        elif self.nav_frame == "NED":
+        elif self.nav_frame == "ENU":
             self.m_ref = np.array([[math.cos(math.radians(self.inclination))],[0],[math.sin(math.radians(self.inclination))]]) # Magnetic Reference Vector
         self.m_ref = self.m_ref/np.linalg.norm(self.m_ref)
 
@@ -79,7 +88,21 @@ class EKF():
         """
         self.est_quat = np.array([[w],[x],[y],[z]])
         
-    def run(self, acc, gyr, mag, hz):
+    def run(self, acc, gyr, mag, hz,noise=[0.1, 0.1, 1]):
+
+        self.gyro_noise = noise[0]**2 # increase noise means gyroscope measurement not accurate, decrease noise means gyroscope measurement accurate
+        self.accel_noise = noise[1]**2 # increae noise means accelerometer measurement not accurate, decrease noise means accelerometer measurement accurate
+        self.mag_noise = noise[2]**2 # increase noise means magnetometer measurement not accurate, decrease noise means magnetometer measurement accurate
+        # print(noise[0],noise[1],noise[2])
+
+        if self.axis == 6:
+            v = np.array([[self.accel_noise]]) # measurement noise vector
+        elif self.axis == 9:
+            v = np.array([[self.accel_noise], [self.mag_noise]]) # measurement noise vector
+        self.R = np.diag(np.repeat(v, 3)) # measurement noise covariance matrix
+        self.I = np.identity(4) # identity matrix
+        self.P = np.identity(4) # initial state covariance
+
         """
         Iteration of Extended Kalman filter
 
@@ -211,6 +234,7 @@ class EKF():
             self.P = (self.I - K @ H) @ P # Updated Covariance Matrix
             self.est_quat = f + K @ v # Corrected State
             self.est_quat = self.est_quat/np.linalg.norm(self.est_quat) # normalize quaternion vector
+            # qw, qx, qy, qz = self.est_quat[0][0], self.est_quat[1][0], self.est_quat[2][0], self.est_quat[3][0]
             qw, qx, qy, qz = self.est_quat[0][0], self.est_quat[1][0], self.est_quat[2][0], self.est_quat[3][0]
         return qw, qx, qy, qz
 

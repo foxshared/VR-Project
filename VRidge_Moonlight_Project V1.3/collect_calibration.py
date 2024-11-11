@@ -1,9 +1,8 @@
-from collect import collect
+from collectV3 import collect
 import yaml
 import numpy as np
 from ahrs import madgwick, mahony, ekf
 import time
-from sensorfrom_phone import Sensor_phone
 from sensorfrom_phoneUDP import Sensor_phoneUDP
 
 if __name__ == '__main__':
@@ -19,16 +18,16 @@ if __name__ == '__main__':
     sen.intialize()
     sen.start_thread(True)
 
-    nav_frame = "NED"  # ENU/NED
-    hz = 1000
+    nav_frame = "ENU"  # ENU/NED
+    hz = 3000
     interval = 1/hz
     acc_time = 1
     gyro_time = 1
-    mag_time = 10
+    mag_time = 20
     calibration = True
     con = collect(nav_frame=nav_frame, calibration=calibration, hz=hz,load_calib=False)
     con.initialization()
-    con.start_thread(ahrs=None, sen=sen,orient=None)
+    con.start_thread(ahrs=None, sen=sen)
 
     gyro_scale, gyro_bias, gyro_misalignment = con.gyro_calibration(gyro_time)
     accel_scale, accel_bias, accel_misalignment = con.accel_calibration(acc_time)

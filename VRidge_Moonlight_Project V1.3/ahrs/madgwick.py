@@ -31,7 +31,7 @@ class Madgwick():
         if self.axis != 6 and self.axis != 9:
             raise ValueError("Axis must be 6 or 9")
 
-        # print("Madgwick filter in use")
+        print("Madgwick filter in use")
         
     def init_quat(self, w, x, y, z):
         """
@@ -163,16 +163,14 @@ class Madgwick():
             h = quat_multi(self.est_quat, quat_multi(m, quat_conjugate(self.est_quat)))               # (eq. 45)
             self.est_quat = self.est_quat/np.linalg.norm(self.est_quat) # normalize quaternion vector
             qw, qx, qy, qz = self.est_quat[0][0], self.est_quat[1][0], self.est_quat[2][0], self.est_quat[3][0]
-
-            if self.nav_frame == "NED":
+            if self.nav_frame == "ENU":
                 # In ENU frame, Y axis in body frame align to north, X axis will 0
                 b = np.array([[0], [np.linalg.norm([h[1][0], h[2][0]])], [h[3][0]]])
                 bx, by, bz = b[0][0], b[1][0], b[2][0]
-            elif self.nav_frame == "ENU":
+            elif self.nav_frame == "NED":
                 # In NED frame, X axis in body frame align to north, Y axis will 0
                 b = np.array([[np.linalg.norm([h[1][0], h[2][0]])], [0], [h[3][0]]])
                 bx, by, bz = b[0][0], b[1][0], b[2][0]
-
             f = np.array([[2.0*(qx*qz - qw*qy) - ax],     # calculate objective function
                         [2.0*(qw*qx + qy*qz) - ay],
                         [2.0*(0.5-qx**2-qy**2) - az],
