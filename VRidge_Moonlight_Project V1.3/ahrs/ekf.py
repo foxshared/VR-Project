@@ -230,7 +230,7 @@ class EKF():
             H   = self.H(f) # Discreted Measurement Matrix
             S   = H @ P @ H.T + self.R # Measurement Prediction Covariance
             # Replace np.linalg.inv by sp.linalg.inv for accelerating matrix calculation
-            K   = P @ H.T @ sp.linalg.inv(S) # Kalman Gain 
+            K   = P @ H.T @ sp.linalg.inv(S) # Kalman Gain
             self.P = (self.I - K @ H) @ P # Updated Covariance Matrix
             self.est_quat = f + K @ v # Corrected State
             self.est_quat = self.est_quat/np.linalg.norm(self.est_quat) # normalize quaternion vector

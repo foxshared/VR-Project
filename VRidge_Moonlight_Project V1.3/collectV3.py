@@ -12,23 +12,16 @@ import sys
 from configparser import ConfigParser
 import os
 
+
 # standard acceleration of gravity
 g = 9.80665
 
 
-def delete_last_line():
-    "Use this function to delete the last line in the STDOUT"
-
-    # cursor up one line
-    sys.stdout.write('\x1b[1A')
-
-    # delete last line
-    sys.stdout.write('\x1b[2K')
-
-
 class collect():
-    def __init__(self, nav_frame="", axis=9, hz=100, calibration=False, load_calib=False,mag_sen=[1,1,1]):
+    def __init__(self, nav_frame="", axis=9, hz=100, calibration=False, load_calib=False, mag_sen=[1, 1, 1],degree = True):
+        self.degree = degree
         self.ConfigParser = ConfigParser()
+        self.create_config()
         self.noise = [0.1, 0.1, 0.1]
         self.wa, self.xa, self.ya, self.za = 0, 0, 0, 0
 
@@ -431,11 +424,9 @@ class collect():
             # my = self.my_*self.adjustment_y
             # mz = self.mz_*self.adjustment_z
 
-
             mx = self.mx_*self.adjustment_x
             my = self.my_*self.adjustment_y
             mz = self.mz_*self.adjustment_z
-
 
             # # print("x {} y {} z {} -------------- x {} y {} z {}".format(self.mx_,self.my_,self.mz_,mx,my,mz))
             # delete_last_line()
@@ -502,8 +493,10 @@ class collect():
         elif self.axis == 9:
             self.roll, self.pitch, self.yaw = accmag2eul(
                 self.ax, self.ay, self.az, self.mx, self.my, self.mz, nav=self.nav_frame)
-        self.roll, self.pitch, self.yaw = math.degrees(
-            self.roll), math.degrees(self.pitch), math.degrees(self.yaw)
+        
+        if self.degree:
+            self.roll, self.pitch, self.yaw = math.degrees(
+                self.roll), math.degrees(self.pitch), math.degrees(self.yaw)
 
         # self.euler = np.array([[0], [0], [self.yaw]])
         self.euler = np.array([[self.roll], [self.pitch], [self.yaw]])
@@ -538,7 +531,7 @@ class collect():
         noise_m = self.get_config_data("noise_m")
         self.hz = self.get_config_data("hz")
         # print(noise_g,noise_a,noise_m)
-        self.noise_chg([noise_g,noise_a,noise_m])
+        self.noise_chg([noise_g, noise_a, noise_m])
 
     def get_ahrs_euler(self):
         """
@@ -549,19 +542,18 @@ class collect():
             - pitch (float) - y-axis Euler angle in degree
             - yaw (float) - z-axis Euler angle in degree
         """
-        self.wa, self.xa, self.ya, self.za = self.ahrs.run(
+        self.w, self.x, self.y, self.z = self.ahrs.run(
             self.acc, self.gyr, self.mag, self.hz, self.noise)
-
-        self.w, self.x, self.y, self.z = self.chgaxis(
-            self.wa, self.xa, self.ya, self.za)
 
         self.roll, self.pitch, self.yaw = quat2eul(
             self.w, self.x, self.y, self.z, seq=self.rotation_seq)
 
-        self.roll, self.pitch, self.yaw = math.degrees(
-            self.roll), math.degrees(self.pitch), math.degrees(self.yaw)
-        self.roll, self.pitch, self.yaw = round(
-            self.roll, 5), round(self.pitch, 5), round(self.yaw, 5)
+        if self.degree:
+            self.roll, self.pitch, self.yaw = math.degrees(
+                self.roll), math.degrees(self.pitch), math.degrees(self.yaw)
+
+            self.roll, self.pitch, self.yaw = round(
+                self.roll, 5), round(self.pitch, 5), round(self.yaw, 5)
 
         self.euler = np.array([[self.roll], [self.pitch], [self.yaw]])
         # self.euler = np.array([[0], [0], [self.yaw]])
@@ -578,11 +570,8 @@ class collect():
             - y (float) - Quaternion Y axis
             - z (float) - Quaternion Z axis
         """
-        self.wa, self.xa, self.ya, self.za = self.ahrs.run(
+        self.w, self.x, self.y, self.z = self.ahrs.run(
             self.acc, self.gyr, self.mag, self.hz, self.noise)
-        
-        self.w, self.x, self.y, self.z = self.chgaxis(
-            self.wa, self.xa, self.ya, self.za)
 
         self.quaternion = np.array([[self.w], [self.x], [self.y], [self.z]])
         return self.w, self.x, self.y, self.z
@@ -617,6 +606,7 @@ class collect():
             print("filter enable")
         else:
             self.ahrs = None
+
         self.thread = Thread(target=self.run_calcu, args=(sen, ))
         self.thread.start()
 
@@ -674,13 +664,13 @@ class collect():
                     self.w, self.x, self.y, self.z = self.get_quaternion()
 
     def out(self):
-        print("out")
+        print("out_lib")
 
         self.alive = False
 
     def get_config_data(self, type):
         # Sub-function to get last port to declare in first run program
-        self.create_config()
+        # self.create_config()
 
         self.ConfigParser.read("config.txt")
         data_config = self.ConfigParser["SETUP"]
@@ -698,9 +688,3 @@ class collect():
             with open("config.txt", "w") as congfi:
                 self.ConfigParser.write(congfi)
                 congfi.close()
-
-    def chgaxis(self, w=0, x=0, y=0, z=0):
-        # w, x, y, z = -w, y, x, z
-        # print("done")
-
-        return w, x, y, z

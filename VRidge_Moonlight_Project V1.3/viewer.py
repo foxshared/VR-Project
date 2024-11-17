@@ -10,6 +10,8 @@ from sensorfrom_phoneUDP import Sensor_phoneUDP
 
 from math import *
 
+from kalman_filter import KalmanFilter
+
 
 class imu_viewer():
     def __init__(self, width, height, hz, nav_frame):
@@ -43,7 +45,7 @@ class imu_viewer():
         elif self.nav_frame == "NED":
             self.rotation_seq = "zyx"
 
-    def run(self, imu):
+    def run(self, imu,kal):
         """
         Create IMU wireframe and keep display IMU information until it close
 
@@ -59,17 +61,21 @@ class imu_viewer():
                 # # print(noise_g,noise_a,noise_m)
                 # imu.noise_chg([noise_g,noise_a,noise_m])
 
-
                 imu.update_noise_txt()
-                print(imu.hz)
+                # print(imu.hz)
+                yaw = kal.iterative_updates(imu.yaw)
+                print(yaw,kal.gain)
 
+                euler = np.array([[imu.roll], [imu.pitch], [yaw]])
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         imu.out()
                         pygame.quit()
                 self.update_rate.tick(self.hz)
-                self.display(imu.acc, imu.gyr, imu.mag, imu.euler,
+                # self.display(imu.acc, imu.gyr, imu.mag, imu.euler,
+                #              imu.quaternion, imu.body_frame, imu.nav_frame)
+                self.display(imu.acc, imu.gyr, imu.mag, euler,
                              imu.quaternion, imu.body_frame, imu.nav_frame)
                 pygame.display.update()
                 # pygame.display.flip()
@@ -272,9 +278,12 @@ if __name__ == '__main__':
 
     ahrs = ekf.EKF(axis, nav_frame)
     imu = collect(nav_frame=nav_frame, axis=axis, hz=window_hz, calibration=calibration,
-                  load_calib=True,mag_sen=[0.8,1,0.8])
+                  load_calib=True, mag_sen=[0.8, 1, 0.8])
+
     imu.initialization()
     imu.start_thread(ahrs=ahrs, sen=sen)
     viewer = imu_viewer(window_width, window_height, window_hz, nav_frame)
 
-    viewer.run(imu=imu)
+    kal = KalmanFilter(initial_est_error=0.1,initial_measure_error=0.1)
+
+    viewer.run(imu=imu,kal=kal)

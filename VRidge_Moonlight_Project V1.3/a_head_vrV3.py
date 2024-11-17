@@ -13,6 +13,7 @@ from sensorfrom_phoneUDP import Sensor_phoneUDP
 from collectV3 import collect
 from ahrs import madgwick, mahony, ekf
 from utils.orientation import eul2quat
+from kalman_filter import KalmanFilter
 
 
 def delete_last_line():

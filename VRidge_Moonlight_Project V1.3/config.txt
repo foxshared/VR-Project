@@ -1,6 +1,6 @@
 [SETUP]
 noise_g = 0.9
-noise_a = 17.0
-noise_m = 58.5
-hz = 12000
+noise_a = 1.0
+noise_m = 10
+hz = 3000
 
